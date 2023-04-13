@@ -325,9 +325,8 @@ def directivity_2d_rectangular_on_solid_l(
     return (
         ((k2 - 2 * S ** 2) * C)
         / _f0(S, k2)
-        * np.sinc((element_width / wavelength_l) * S)
+        * np.sinc((element_width / wavelength_l) * S) # Finite width strip
     )
-
 
 def directivity_2d_rectangular_on_solid_t(
     theta, element_width, wavelength_l, wavelength_t
@@ -363,13 +362,175 @@ def directivity_2d_rectangular_on_solid_t(
     k2 = k * k
     theta = np.asarray(theta).astype(np.complex_)
     S = sin(theta)
-    C = cos(theta)
+    # C = cos(theta)
     return (
         k ** 2.5
         * (np.sqrt(k2 * S * S - 1) * sin(2 * theta))
         / _f0(k * S, k2)
-        * np.sinc((element_width / wavelength_t) * S)
+        * np.sinc((element_width / wavelength_t) * S) # Finite width strip
     )
+
+
+
+
+##############################################################################
+def directivity_2d_rectangular_laser_l(
+    theta, element_width, wavelength_l, wavelength_t
+):
+    """
+    L-wave directivity of rectangular element in laser assuming Gaussian stress
+    distribution
+
+    The element is modelled by an infinitely long strip of finite width
+    vibrating in a direction normal to the surface of the solid medium.
+
+    Parameters
+    ----------
+    theta : ndarray
+        Angles in radians.
+    element_width : float
+    wavelength_l : float
+    wavelength_t : float
+
+    Returns
+    -------
+    directivity_l : ndarray
+        Complex
+
+    Notes
+    -----
+    Equations MP (93) and DW (2), (3), (6)
+
+    The sinc results of the integration of MP (90) with far field
+    approximation.
+
+    Normalisation coefficients are ignored, but the values are consistent with 
+    :func:`directivity_2d_rectangular_on_solid_t`.
+
+    References
+    ----------
+    Miller, G. F., and H. Pursey. 1954. ‘The Field and Radiation Impedance of
+    Mechanical Radiators on the Free Surface of a Semi-Infinite Isotropic
+    Solid’. Proceedings of the Royal Society of London A: Mathematical,
+    Physical and Engineering Sciences 223 (1155): 521–41.
+    https://doi.org/10.1098/rspa.1954.0134.
+
+    Drinkwater, Bruce W., and Paul D. Wilcox. 2006. ‘Ultrasonic Arrays for
+    Non-Destructive Evaluation: A Review’. NDT & E International 39 (7):
+    525–41. https://doi.org/10.1016/j.ndteint.2006.03.006.
+
+    See Also
+    --------
+    :func:`directivity_2d_rectangular_on_solid_t`
+
+    """
+    k = wavelength_l / wavelength_t
+    k2 = k * k
+    theta = np.asarray(theta).astype(np.complex_)
+    S = sin(theta)
+    C = cos(theta)
+    return (
+        ((k2 - 2 * S ** 2) * C)
+        / _f0(S, k2)
+        * np.sqrt(2*np.pi) * element_width * np.exp(-(2* np.pi* np.pi * element_width * element_width / wavelength_l**2) * S**2)
+    )
+
+def directivity_2d_rectangular_laser_t(
+    theta, element_width, wavelength_l, wavelength_t
+):
+    """
+    T-wave directivity of rectangular element in laser assuming Gaussian stress
+    distribution
+
+    See :func:`directivity_2d_rectangular_laser_l` for further information. 
+
+    Parameters
+    ----------
+    theta : ndarray
+        Angles in radians.
+    element_width : float
+    wavelength_l : float
+    wavelength_t : float
+
+    Returns
+    -------
+    directivity_t : ndarray
+        Complex
+
+    Notes
+    -----
+    Equations MP (94) and DW (2), (4), (6)
+
+    See Also
+    --------
+    :func:`directivity_2d_rectangular_on_solid_t`
+
+    """
+    k = wavelength_l / wavelength_t
+    k2 = k * k
+    theta = np.asarray(theta).astype(np.complex_)
+    S = sin(theta)
+    # C = cos(theta)
+    return (
+        k ** 2.5
+        * (np.sqrt(k2 * S * S - 1) * sin(2 * theta))
+        / _f0(k * S, k2)
+        * np.sqrt(2*np.pi) * element_width * np.exp(-(2* np.pi* np.pi * element_width * element_width / wavelength_t**2) * S**2)
+    )
+
+
+##############################################################################
+# UPGRADE BY SERGIO CANTERO CHINCHILLA
+def directivity_linesource_laser_tx_l(theta, wavelength_l, wavelength_t,freq):
+    """
+    Dipole force derivation in the far-field from A.E.Lord 1966 paper
+    """
+    k1 = 2*np.pi/wavelength_l
+    k2 = 2*np.pi/wavelength_t
+    theta = np.asarray(theta).astype(np.complex_)
+    
+    
+    # k = wavelength_l / wavelength_t
+    # k2 = k*k
+    
+    S = sin(theta)
+    xi = k1 * S
+    
+    return (
+        # ((freq/3000)*(1 + 1j)) / np.sqrt(np.pi*k1)
+        # ((freq/2448)*(1 + 1j)) / np.sqrt(np.pi*k1)
+        ((freq/2448)*(1 + 1j)) / np.sqrt(np.pi*k1)
+        * k1 * S
+        * (k1**2 * sin(2*theta) * np.sqrt(k2**2 - (k1*S)**2))
+        / ( (2*(xi)**2 - k2**2)**2 - 4*(xi)**2*np.sqrt( ((xi)**2 - k1**2) * ((xi)**2 - k2**2) ))
+        # * np.sqrt(2*np.pi) * 0.02e-6 * np.exp(-(2* np.pi* np.pi * 0.02e-6 * 0.02e-6 / wavelength_l**2) * S**2)
+        ) # With (freq/2448) we ensure a ratio of 0.2 at 70deg for all freqs
+def directivity_linesource_laser_tx_t(theta, wavelength_l, wavelength_t,freq):
+    """
+    Dipole force derivation in the far-field from A.E.Lord 1966 paper
+    """
+    k1 = 2*np.pi/wavelength_l
+    k2 = 2*np.pi/wavelength_t
+    theta = np.asarray(theta).astype(np.complex_)
+    
+    
+    # k = wavelength_l / wavelength_t
+    # k2 = k*k
+    
+    S = sin(theta)
+    xi = k2 * S
+    
+    return (
+        ((1 + 1j)) / np.sqrt(np.pi*k2)
+        * k2 * S
+        * (k2**4 * cos(theta) * cos(2*theta))
+        / ( (2*(xi)**2 - k2**2)**2 - 4*(xi)**2*np.sqrt( ((xi)**2 - k1**2) * ((xi)**2 - k2**2) ))
+        # * np.sqrt(2*np.pi) * 0.5e-6 * np.exp(-(2* np.pi* np.pi * 0.02e-6 * 0.02e-6 / wavelength_t**2) * S**2)
+        )
+##############################################################################
+
+
+
 
 
 def snell_angles(incidents_angles, c_incident, c_refracted):
@@ -384,7 +545,9 @@ def snell_angles(incidents_angles, c_incident, c_refracted):
     If the incident angle is complex, the refracted angle is complex (imagery part not null).
     The reason is that either the real or the complex arcsine function is used.
     """
-    return np.arcsin(c_refracted / c_incident * sin(incidents_angles))
+    _aux = (c_refracted / c_incident * sin(incidents_angles))
+    _aux[_aux>1.0] = 1.0 # Avoid nan when computing arcsin
+    return np.arcsin(_aux)
 
 
 def fluid_solid(
@@ -1124,6 +1287,7 @@ def beamspread_2d_for_path(ray_geometry):
         gamma_list.append(
             (nu * nu - sin_theta * sin_theta) / (nu * cos_theta * cos_theta)
         )
+        gamma_list[k - 1][gamma_list[k - 1]<=0] = 1e-300
 
     # Between the probe and the first interface, beamspread of an unbounded medium.
     # Use a copy because the original may be a cached value and we don'ray want
@@ -1187,6 +1351,7 @@ def reverse_beamspread_2d_for_path(ray_geometry):
         gamma_list.append(
             (nu * cos_theta * cos_theta) / (1 - nu * nu * sin_theta * sin_theta)
         )
+        gamma_list[k - 1][gamma_list[k - 1]<=0] = 1e-300
 
     # Between the probe and the first interface, beamspread of an unbounded medium.
     # Use a copy because the original may be a cached value and we don'ray want
@@ -1459,6 +1624,11 @@ class ModelAmplitudes(abc.ABC):
         # wrapper in general case, inherit and write a faster implementation if possible
         return sensitivity_model_assisted_tfm(self, timetrace_weights, **kwargs)
 
+    def sensitivity_model_assisted_tfm_AUC(self, timetrace_weights, **kwargs):
+        return sensitivity_model_assisted_tfm_AUC(self, timetrace_weights, **kwargs)
+    
+    def sensitivity_model_assisted_tfm_noise(self, timetrace_weights, **kwargs):
+        return sensitivity_model_assisted_tfm_noise(self, timetrace_weights, **kwargs)
 
 class _ModelAmplitudesWithScatFunction(ModelAmplitudes):
     def __init__(
@@ -1642,12 +1812,92 @@ def sensitivity_model_assisted_tfm(
     # chunk the array in case we have an array too big (ModelAmplitudes)
     for chunk in helpers.chunk_array((numpoints, numtimetraces), block_size):
         absval = np.abs(model_amplitudes[chunk])
+        # tmp = np.sqrt((absval  *absval  * timetrace_weights[np.newaxis]).sum(axis=1)) # SCC: Testing
         tmp = (absval * absval * timetrace_weights[np.newaxis]).sum(axis=1)
         if sensitivity is None:
             sensitivity = np.zeros((numpoints,), dtype=tmp.dtype)
         sensitivity[chunk] = tmp
-    sensitivity /= numtimetraces
+    # sensitivity /= numtimetraces
     return sensitivity
+
+
+def sensitivity_model_assisted_tfm_noise(
+    model_amplitudes, timetrace_weights, block_size=4000
+):
+    """
+    Return the sensitivity for model assisted TFM (multiply TFM timetraces by conjugate
+    of scatterer contribution).
+
+    The sensitivity at a point is defined the predicted TFM amplitude that a sole
+    scatterer centered on that point would have.
+
+    Parameters
+    ----------
+    model_amplitudes : ndarray or ModelAmplitudes
+        Coefficients P_ij. Shape: (numpoints, numtimetraces)
+    timetrace_weights : ndarray
+        Shape: (numtimetraces, )
+
+    Returns
+    -------
+    predicted_intensities
+        Shape: (numpoints, ).
+    """
+    numpoints, numtimetraces = model_amplitudes.shape
+    assert timetrace_weights.ndim == 1
+    assert model_amplitudes.shape[1] == timetrace_weights.shape[0]
+
+    sensitivity = None
+
+    # chunk the array in case we have an array too big (ModelAmplitudes)
+    for chunk in helpers.chunk_array((numpoints, numtimetraces), block_size):
+        # absval = np.abs(model_amplitudes[chunk])
+        # tmp = np.sqrt((absval  *absval  * timetrace_weights[np.newaxis]).sum(axis=1)) # SCC: Testing
+        tmp = (timetrace_weights[np.newaxis]).sum(axis=1)
+        if sensitivity is None:
+            sensitivity = np.zeros((numpoints,), dtype=tmp.dtype)
+        sensitivity[chunk] = tmp
+    # sensitivity /= numtimetraces
+    return sensitivity
+
+
+def sensitivity_model_assisted_tfm_AUC(
+    model_amplitudes, timetrace_weights, block_size=4000
+):
+    """
+    Return the sensitivity for model assisted TFM (multiply TFM timetraces by conjugate
+    of scatterer contribution).
+
+    The sensitivity at a point is defined the predicted TFM amplitude that a sole
+    scatterer centered on that point would have.
+
+    Parameters
+    ----------
+    model_amplitudes : ndarray or ModelAmplitudes
+        Coefficients P_ij. Shape: (numpoints, numtimetraces)
+    timetrace_weights : ndarray
+        Shape: (numtimetraces, )
+
+    Returns
+    -------
+    predicted_intensities
+        Shape: (numpoints, ).
+    """
+    numpoints, numtimetraces = model_amplitudes.shape
+    assert timetrace_weights.ndim == 1
+    assert model_amplitudes.shape[1] == timetrace_weights.shape[0]
+
+    sensitivity = None
+
+    # chunk the array in case we have an array too big (ModelAmplitudes)
+    for chunk in helpers.chunk_array((numpoints, numtimetraces), block_size):
+        absval = np.abs(model_amplitudes[chunk])
+        tmp = (absval * absval * timetrace_weights[np.newaxis]).sum(axis=1)
+        if sensitivity is None:
+            sensitivity = np.zeros((numpoints,), dtype=tmp.dtype)
+        sensitivity[chunk] = tmp
+    # sensitivity /= numtimetraces
+    return np.sqrt(sensitivity)#/numtimetraces
 
 
 @numba.njit(parallel=True, nogil=True)

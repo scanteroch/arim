@@ -443,6 +443,7 @@ def plot_oxz(
 
     scale = scale.lower()
     if scale == "linear":
+        data = np.abs(data)
         if ref_db is not None:
             warn("ref_db is ignored for linear plot", ArimWarning, stacklevel=2)
     elif scale == "db":
@@ -470,7 +471,7 @@ def plot_oxz(
         # necessary magic to make the colorbar the same height as the image
         divider = axes_grid1.make_axes_locatable(ax)
         cax = divider.append_axes("right", size="5%", pad=0.05)
-        cax.set_aspect(aspect=20, adjustable="box")
+        cax.set_aspect(aspect=1, adjustable="box")
         fig.colorbar(image, ax=ax, cax=cax)
     if clim is not None:
         image.set_clim(clim)
@@ -481,7 +482,7 @@ def plot_oxz(
 
     # Like axis('equal') but mitigates https://github.com/matplotlib/matplotlib/issues/11416
     # adjustable=box to avoid white space (default in matplotlib 3)
-    ax.axis(aspect=1, adjustable="box")
+    # ax.axis(aspect=1, adjustable="box")
     ax.axis([grid.xmin, grid.xmax, grid.zmax, grid.zmin])
     if savefig:
         if filename is None:

@@ -118,6 +118,8 @@ def delay_and_sum_numba(
         delay_and_sum_function = _delay_and_sum_amplitudes_nearest
     elif interpolation.lower() == "linear":
         delay_and_sum_function = _delay_and_sum_amplitudes_linear
+    elif interpolation.lower() == "linear_weights":
+        delay_and_sum_function = _delay_and_sum_amplitudes_linear_weights
     else:
         raise ValueError("invalid 'interpolation' argument")
 
@@ -298,7 +300,7 @@ def _delay_and_sum_amplitudes_linear(
 
 
 @numba.jit(nopython=True, nogil=True, parallel=True, fastmath=True)
-def _delay_and_sum_amplitudes_linear(
+def _delay_and_sum_amplitudes_linear_weights(
     weighted_timetraces,
     tx,
     rx,
@@ -345,21 +347,22 @@ def _delay_and_sum_amplitudes_linear(
             )
             loc1 = (lookup_time - t0) / dt
             lookup_index = int(loc1)
-            frac1 = loc1 - lookup_index
+            # frac1 = np.abs(loc1 - lookup_index)
+            # frac1 = loc1 - lookup_index
             lookup_index1 = lookup_index + 1
 
             if lookup_index < 0 or lookup_index1 >= numsamples:
                 res_tmp += fillvalue
             else:
-                lscanVal = weighted_timetraces[scan, lookup_index]
-                lscanVal1 = weighted_timetraces[scan, lookup_index1]
-                lscanUseVal = lscanVal + frac1 * (lscanVal1 - lscanVal)
+                # lscanVal = weighted_timetraces[scan, lookup_index]
+                # lscanVal1 = weighted_timetraces[scan, lookup_index1]
+                #lscanUseVal = lscanVal + frac1 * (lscanVal1 - lscanVal)
                 res_tmp += (
-                    amplitudes_tx[point, tx[scan]]
-                    * amplitudes_rx[point, rx[scan]]
-                    * lscanUseVal
+                    amplitudes_tx[point, tx[scan]]**2
+                    * amplitudes_rx[point, rx[scan]]**2
+                    * 1#lscanUseVal
                 )
-        result[point] = res_tmp / numtimetraces
+        result[point] = np.sqrt(res_tmp) / numtimetraces
 
 
 def delay_and_sum_numba_noamp(

@@ -441,8 +441,8 @@ def backwall_paths(
 
     """
 
-    if max_number_of_reflection > 3:
-        msg = "The maximum number of backwall reflections exceeds coding limit (3)"
+    if max_number_of_reflection > 4:
+        msg = "The maximum number of backwall reflections exceeds coding limit (4)"
         raise ValueError(msg)
 
     probe_start = c.Interface(*probe_oriented_points, are_normals_on_out_rays_side=True)
@@ -587,6 +587,70 @@ def backwall_paths(
                                 ),
                                 name="Backwall " + key,
                             )
+
+    if max_number_of_reflection == 3:
+        return paths
+    
+    
+
+    for mode1 in (c.Mode.L, c.Mode.T):
+        for mode2 in (c.Mode.L, c.Mode.T):
+            for mode3 in (c.Mode.L, c.Mode.T):
+                for mode4 in (c.Mode.L, c.Mode.T):
+                    for mode5 in (c.Mode.L, c.Mode.T):
+                        for mode6 in (c.Mode.L, c.Mode.T):
+                            for mode7 in (c.Mode.L, c.Mode.T):
+                                for mode8 in (c.Mode.L, c.Mode.T):
+                                    key = (
+                                        mode1.key()
+                                        + mode2.key()
+                                        + mode3.key()
+                                        + mode4.key()
+                                        + mode5.key()
+                                        + mode6.key()
+                                        + mode7.key()
+                                        + mode8.key()
+                                    )
+                                    paths[key] = c.Path(
+                                        interfaces=(
+                                            probe_start,
+                                            frontwall_couplant_to_block,
+                                            backwall_refl,
+                                            frontwall_refl,
+                                            backwall_refl,
+                                            frontwall_refl,
+                                            backwall_refl,
+                                            frontwall_refl,
+                                            backwall_refl,
+                                            frontwall_block_to_couplant,
+                                            probe_end,
+                                        ),
+                                        materials=(
+                                            couplant_material,
+                                            block_material,
+                                            block_material,
+                                            block_material,
+                                            block_material,
+                                            block_material,
+                                            block_material,
+                                            block_material,
+                                            block_material,
+                                            couplant_material,
+                                        ),
+                                        modes=(
+                                            c.Mode.L,
+                                            mode1,
+                                            mode2,
+                                            mode3,
+                                            mode4,
+                                            mode5,
+                                            mode6,
+                                            mode7,
+                                            mode8,
+                                            c.Mode.L,
+                                        ),
+                                        name="Backwall " + key,
+                                    )
 
     return paths
 
@@ -774,10 +838,10 @@ def make_paths(
     """
     paths = OrderedDict()
 
-    if max_number_of_reflection > 2:
-        raise NotImplementedError
-    if max_number_of_reflection < 0:
-        raise ValueError
+    # if max_number_of_reflection > 2:
+    #     raise NotImplementedError
+    # if max_number_of_reflection < 0:
+    #     raise ValueError
 
     probe = interface_dict["probe"]
     frontwall = interface_dict["frontwall_trans"]
@@ -786,6 +850,8 @@ def make_paths(
         backwall = interface_dict["backwall_refl"]
     if max_number_of_reflection >= 2:
         frontwall_refl = interface_dict["frontwall_refl"]
+    if max_number_of_reflection >= 3:
+        backwall_refl = interface_dict["backwall_refl"]
 
     paths["L"] = c.Path(
         interfaces=(probe, frontwall, grid),
@@ -850,6 +916,29 @@ def make_paths(
                 ),
                 name=key,
             )
+            
+    # if  max_number_of_reflection >= 3:
+        # keys = ["LLLL", "LLLT", "LLTL", "LLTT", "LTLL", "LTLT", "LTTL", "LTTT",
+        #         "TLLL", "TLLT", "TLTL", "TLTT", "TTLL", "TTLT", "TTTL", "TTTT"]
+
+        # for key in keys:
+        #     paths[key] = c.Path(
+        #         interfaces=(probe, frontwall, backwall, frontwall_refl, backwall_refl, grid),
+        #         materials=(
+        #             couplant_material,
+        #             block_material,
+        #             block_material,
+        #             block_material,
+        #         ),
+        #         modes=(
+        #             c.Mode.L,
+        #             helpers.parse_enum_constant(key[0], c.Mode),
+        #             helpers.parse_enum_constant(key[1], c.Mode),
+        #             helpers.parse_enum_constant(key[2], c.Mode),
+        #             helpers.parse_enum_constant(key[3], c.Mode),
+        #         ),
+        #         name=key,
+        #     )
 
     return paths
 

@@ -850,7 +850,8 @@ def spherical_coordinates_r(x, y, z, out=None):
 
 def spherical_coordinates_theta(z, r, out=None):
     """polar angle"""
-    return np.arccos(z / r, out=out)
+    # return np.arccos(z / r, out=out)
+    return np.arccos(z / (r + 1e-300), out=out) # avoid dividing by 0
 
 
 def spherical_coordinates_phi(x, y, out=None):
